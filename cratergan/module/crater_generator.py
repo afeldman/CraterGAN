@@ -20,22 +20,22 @@ class MNISTDataModule(pl.LightningDataModule):
         # Could optionally be assigned dynamically in dm.setup()
         self.dims = (1, 256, 256)
 
-        self.moon_crater = MoonCraterDataset(self.data_dir, transform=self.transform, target_transform=self.transform)
-
     def prepare_data(self):
         # download data if not available
         MoonCraterDataset(self.data_dir, download=True)
 
     def setup(self, stage: Optional[str] = None):
 
+        moon_crater = MoonCraterDataset(self.data_dir, transform=self.transform, target_transform=self.transform)
+
         if stage == "fit" or stage is None:
             crater_split = np.floor(len(self.moon_crater) * 0.75)
-            self.moon_crater_train, self.moon_crater_val = random_split(self.moon_crater, [crater_split, len(self.moon_crater) - crater_split])
+            self.moon_crater_train, self.moon_crater_val = random_split(moon_crater, [crater_split, len(self.moon_crater) - crater_split])
 
         # Assign test dataset for use in dataloader(s). the test data set is same as train
         if stage == "test" or stage is None:
             crater_split = np.floor(len(self.moon_crater) * 0.25)
-            self.moon_crater_test, _ = random_split(self.moon_crater, [crater_split, len(self.moon_crater) - crater_split])
+            self.moon_crater_test, _ = random_split(moon_crater, [crater_split, len(self.moon_crater) - crater_split])
 
     def train_dataloader(self):
         return DataLoader(self.moon_crater_train, batch_size=16)
