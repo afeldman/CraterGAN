@@ -35,13 +35,13 @@ class CaterDataModule(pl.LightningDataModule):
         moon_crater = MoonCraterDataset(self.data_dir, transform=self.transform, target_transform=self.transform)
 
         if stage == "fit" or stage is None:
-            crater_split = np.floor(len(self.moon_crater) * 0.75)
-            self.moon_crater_train, self.moon_crater_val = random_split(moon_crater, [crater_split, len(self.moon_crater) - crater_split])
+            crater_split = int(len(moon_crater) * 0.75)
+            self.moon_crater_train, self.moon_crater_val = random_split(moon_crater, [crater_split, len(moon_crater) - crater_split])
 
         # Assign test dataset for use in dataloader(s). the test data set is same as train
         if stage == "test" or stage is None:
-            crater_split = np.floor(len(self.moon_crater) * 0.25)
-            self.moon_crater_test, _ = random_split(moon_crater, [crater_split, len(self.moon_crater) - crater_split])
+            crater_split = int(len(self.moon_crater) * 0.25)
+            self.moon_crater_test, _ = random_split(moon_crater, [crater_split, len(moon_crater) - crater_split])
 
     def train_dataloader(self):
         return DataLoader(self.moon_crater_train, 

@@ -26,12 +26,12 @@ def training(datasource:str=".",
     model = CraterGAN(batch_size=batchsize, 
                     channel=image_size[0],
                     height=image_size[1],
-                    width=image_size[2], 
-                    batch_size=batchsize)
+                    width=image_size[2])
 
     train = Trainer(gpus=gpus, 
                     progress_bar_refresh_rate=20, 
                     default_root_dir=checkpoint)
+
     train.fit(model, datamodel)
 
 sys.exit(fire.Fire(training))

@@ -17,8 +17,8 @@ class CraterGAN(LightningModule):
                 width:int, 
                 latent_dim:int=100,
                 lr:float = 2E-4,
-                br1:float = 0.5,
-                br2:float = 0.999,
+                b1:float = 0.5,
+                b2:float = 0.999,
                 batch_size:int = 16,
                 **kwargs):
         super().__init__()
@@ -58,7 +58,7 @@ class CraterGAN(LightningModule):
         self.logger.experiment.add_image("generated_images", grid, self.current_epoch)
 
     def training_step(self, batch, batch_idx, optimizer_idx):
-        imgs, _ = batch
+        imgs, _ = batch[:-1]
 
         # sample noise
         z = torch.randn(imgs.shape[0], self.hparams.latent_dim)
