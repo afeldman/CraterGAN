@@ -20,7 +20,7 @@ def training(datasource:str=".",
              batchsize:int = 32,
              checkpoint:str="./checkpoint"):
 
-    checkpoint = ModelCheckpoint(dirpath=f"{checkpoint}/log/",
+    checkpoint_callback = ModelCheckpoint(dirpath=f"{checkpoint}/log/",
                                  verbose=True,
                                  monitor="val_acc",
                                  mode="max")
@@ -39,10 +39,12 @@ def training(datasource:str=".",
                     width=image_size[2])
 
     train = Trainer(gpus=gpus, 
-                    checkpoint_callback=checkpoint,
+                    callbacks=[checkpoint_callback],
                     progress_bar_refresh_rate=20, 
                     default_root_dir=checkpoint,
-                    logger=logger)
+                    logger=logger,
+                    auto_scale_batch_size=True,
+                    auto_lr_find=True)
 
     train.fit(model, datamodel)
 
