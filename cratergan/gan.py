@@ -31,6 +31,7 @@ class CraterGAN(LightningModule):
 
         self.generator = Generator(latent_dim=self.hparams.latent_dim, img_shape=data_shape)
         self.discriminator = Discriminator(img_shape=data_shape)
+
         self.validation_z = torch.randn(8, self.hparams.latent_dim)
         self.sample_input_img = torch.zeros(2, self.hparams.latent_dim)
 
@@ -47,6 +48,7 @@ class CraterGAN(LightningModule):
 
         opt_g = torch.optim.Adam(self.generator.parameters(), lr=lr, betas=(b1, b2))
         opt_d = torch.optim.Adam(self.discriminator.parameters(), lr=lr, betas=(b1, b2))
+
         return [opt_g, opt_d], []
 
     def on_epoch_end(self):
