@@ -16,7 +16,6 @@ class CraterGAN(LightningModule):
                 height:int, 
                 width:int, 
                 latent_dim:int=100,
-                lr:float = 2E-4,
                 b1:float = 0.5,
                 b2:float = 0.999,
                 **kwargs):
