@@ -19,7 +19,6 @@ class CraterGAN(LightningModule):
                 lr:float = 2E-4,
                 b1:float = 0.5,
                 b2:float = 0.999,
-                batch_size:int = 16,
                 **kwargs):
         super().__init__()
 

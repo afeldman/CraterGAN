@@ -17,7 +17,6 @@ from cratergan.gan import CraterGAN
 def training(datasource:str=".",
              gpus:int=torch.cuda.device_count(), 
              workers:int=os.cpu_count()//2,
-             batchsize:int = 32,
              checkpoint:str="./checkpoint"):
 
     checkpoint_callback = ModelCheckpoint(dirpath=f"{checkpoint}/log/",
@@ -28,19 +27,16 @@ def training(datasource:str=".",
     logger = TensorBoardLogger(f'{checkpoint}/logs/')
 
     datamodel = CaterDataModule(data_dir=datasource, 
-                                num_worker=workers, 
-                                batch_size=batchsize)
+                                num_worker=workers)
 
     image_size = datamodel.size()
 
-    model = CraterGAN(batch_size=batchsize, 
-                    channel=image_size[0],
+    model = CraterGAN(channel=image_size[0],
                     height=image_size[1],
                     width=image_size[2])
 
     train = Trainer(gpus=gpus, 
                     callbacks=[checkpoint_callback],
-                    progress_bar_refresh_rate=20, 
                     default_root_dir=checkpoint,
                     logger=logger,
                     auto_scale_batch_size=True,

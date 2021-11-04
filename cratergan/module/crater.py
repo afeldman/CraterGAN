@@ -1,6 +1,5 @@
 from typing import Optional
 
-import numpy as np
 import pytorch_lightning as pl
 from torch.utils.data import random_split, DataLoader
 from torchvision import transforms
@@ -11,8 +10,7 @@ from craterdata.mooncraterdataset import MoonCraterDataset
 class CaterDataModule(pl.LightningDataModule):
     def __init__(self, 
                  data_dir: str = "./", 
-                 num_worker:int=8,
-                 batch_size:int=8):
+                 num_worker:int=8):
 
         super().__init__()
         self.data_dir = data_dir
@@ -20,7 +18,6 @@ class CaterDataModule(pl.LightningDataModule):
 
 
         self.num_worker = num_worker
-        self.batch_size = batch_size
 
         # Setting default dims here because we know them.
         # Could optionally be assigned dynamically in dm.setup()
