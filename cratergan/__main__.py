@@ -6,6 +6,7 @@ import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.tuner.tuning import Tuner
 
 
 
@@ -35,13 +36,23 @@ def training(datasource:str=".",
                     height=image_size[1],
                     width=image_size[2])
 
-    train = Trainer(gpus=gpus, 
+    trainer = Trainer(gpus=gpus, 
                     callbacks=[checkpoint_callback],
                     default_root_dir=checkpoint,
                     logger=logger,
-                    auto_scale_batch_size=True,
-                    auto_lr_find=True)
+                    auto_lr_find=True,
+                    accelerator='ddp', 
+                    auto_scale_batch_size='binsearch',
+                    auto_select_gpus=True)
 
-    train.fit(model, datamodel)
+    #tuner = Tuner(trainer)
+    #model.hparams.batch_size = 0
+    #new_batch_size = tuner.scale_batch_size(model, mode="binsearch", init_val=32, max_trials=10, datamodule=model)
+    #model.hparams.batch_size = new_batch_size
+    #lr_finder = trainer.tuner.lr_find(model,min_lr=1e-08, max_lr=1, mode='linear')
+
+    #model.hparams.lr = lr_finder.suggestion()
+
+    trainer.fit(model, datamodel)
 
 sys.exit(fire.Fire(training))

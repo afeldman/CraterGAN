@@ -10,18 +10,22 @@ from craterdata.mooncraterdataset import MoonCraterDataset
 class CaterDataModule(pl.LightningDataModule):
     def __init__(self, 
                  data_dir: str = "./", 
-                 num_worker:int=8):
+                 num_worker:int=8, 
+                 batch_size:int=128):
 
         super().__init__()
-        self.data_dir = data_dir
-        self.transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
 
+        self.data_dir = data_dir
+        self.transform = transforms.Compose([transforms.ToTensor()])
 
         self.num_worker = num_worker
+        self.batch_size = batch_size
 
         # Setting default dims here because we know them.
         # Could optionally be assigned dynamically in dm.setup()
         self.dims = (1, 256, 256)
+
+        self.save_hyperparameters()
 
     def prepare_data(self):
         # download data if not available
@@ -42,15 +46,15 @@ class CaterDataModule(pl.LightningDataModule):
 
     def train_dataloader(self):
         return DataLoader(self.moon_crater_train, 
-                         batch_size=self.batch_size, 
+                         batch_size=self.hparams.batch_size, 
                          num_workers=self.num_worker)
 
     def val_dataloader(self):
         return DataLoader(self.moon_crater_val, 
-                          batch_size=self.batch_size, 
+                          batch_size=self.hparams.batch_size, 
                           num_workers=self.num_worker)
 
     def test_dataloader(self):
         return DataLoader(self.moon_crater_test, 
-                          batch_size=self.batch_size, 
+                          batch_size=self.hparams.batch_size, 
                           num_workers=self.num_worker)

@@ -15,11 +15,14 @@ class CraterGAN(LightningModule):
                 channel:int,
                 height:int, 
                 width:int, 
+                leraning_rate:float=1e-4,
                 latent_dim:int=100,
                 b1:float = 0.5,
                 b2:float = 0.999,
                 **kwargs):
         super().__init__()
+
+        self.hparams.lr = leraning_rate
 
         # hyperparameter
         self.save_hyperparameters()
@@ -40,7 +43,8 @@ class CraterGAN(LightningModule):
         return F.binary_cross_entropy(y_hat, y)
 
     def configure_optimizers(self):
-        lr = self.hparams.lr
+        lr=self.hparams.lr
+
         b1 = self.hparams.b1
         b2 = self.hparams.b2
 
