@@ -18,7 +18,8 @@ from cratergan.gan import CraterGAN
 def training(datasource:str=".",
              gpus:int=torch.cuda.device_count(), 
              workers:int=os.cpu_count()//2,
-             checkpoint:str="./checkpoint"):
+             checkpoint:str="./checkpoint", 
+             strategy=None):
 
     checkpoint_callback = ModelCheckpoint(dirpath=f"{checkpoint}/log/",
                                  verbose=True,
@@ -41,17 +42,9 @@ def training(datasource:str=".",
                     default_root_dir=checkpoint,
                     logger=logger,
                     auto_lr_find=True,
-                    accelerator='ddp', 
+                    strategy=strategy,
                     auto_scale_batch_size='binsearch',
                     auto_select_gpus=True)
-
-    #tuner = Tuner(trainer)
-    #model.hparams.batch_size = 0
-    #new_batch_size = tuner.scale_batch_size(model, mode="binsearch", init_val=32, max_trials=10, datamodule=model)
-    #model.hparams.batch_size = new_batch_size
-    #lr_finder = trainer.tuner.lr_find(model,min_lr=1e-08, max_lr=1, mode='linear')
-
-    #model.hparams.lr = lr_finder.suggestion()
 
     trainer.fit(model, datamodel)
 

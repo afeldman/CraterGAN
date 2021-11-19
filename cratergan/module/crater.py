@@ -11,7 +11,7 @@ class CaterDataModule(pl.LightningDataModule):
     def __init__(self, 
                  data_dir: str = "./", 
                  num_worker:int=8, 
-                 batch_size:int=128):
+                 batch_size:int=256):
 
         super().__init__()
 
@@ -21,11 +21,12 @@ class CaterDataModule(pl.LightningDataModule):
         self.num_worker = num_worker
         self.batch_size = batch_size
 
+        self.save_hyperparameters()
+
         # Setting default dims here because we know them.
         # Could optionally be assigned dynamically in dm.setup()
         self.dims = (1, 256, 256)
 
-        self.save_hyperparameters()
 
     def prepare_data(self):
         # download data if not available

@@ -86,7 +86,7 @@ class CraterGAN(LightningModule):
 
             # adversarial loss is binary cross-entropy
             g_loss = self.adversarial_loss(self.discriminator(self(z)), valid)
-            tqdm_dict = {"g_loss": g_loss}
+            tqdm_dict = {"g_loss": g_loss.detach()}
             output = OrderedDict({"loss": g_loss, "progress_bar": tqdm_dict, "log": tqdm_dict})
             return output
 
@@ -108,6 +108,6 @@ class CraterGAN(LightningModule):
 
             # discriminator loss is the average of these
             d_loss = (real_loss + fake_loss) / 2
-            tqdm_dict = {"d_loss": d_loss}
+            tqdm_dict = {"d_loss": d_loss.detach()}
             output = OrderedDict({"loss": d_loss, "progress_bar": tqdm_dict, "log": tqdm_dict})
             return output
