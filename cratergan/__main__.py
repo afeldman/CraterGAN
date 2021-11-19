@@ -23,8 +23,9 @@ def training(datasource:str=".",
 
     checkpoint_callback = ModelCheckpoint(dirpath=f"{checkpoint}/log/",
                                  verbose=True,
-                                 monitor="val_acc",
-                                 mode="max")
+                                 save_top_k=3,
+                                 mode="max",
+                                 filename='CraterGAN-{epoch:02d}')
 
     logger = TensorBoardLogger(f'{checkpoint}/logs/')
 

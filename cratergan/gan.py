@@ -15,17 +15,18 @@ class CraterGAN(LightningModule):
                 channel:int,
                 height:int, 
                 width:int, 
-                leraning_rate:float=1e-4,
+                lr:float=1e-4,
                 latent_dim:int=100,
                 b1:float = 0.5,
                 b2:float = 0.999,
+                batch_size:int=256,
                 **kwargs):
         super().__init__()
 
-        self.hparams.lr = leraning_rate
+        self.save_hyperparameters()
 
         # hyperparameter
-        self.save_hyperparameters()
+        
 
         # networks
         data_shape = (channel, width, height)
