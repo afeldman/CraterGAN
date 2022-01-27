@@ -7,6 +7,8 @@ import torchvision
 
 from pytorch_lightning import LightningModule
 
+from torchmetrics import Accuracy
+
 from cratergan.module.generator import Generator
 from cratergan.module.discriminator import Discriminator
 
@@ -19,14 +21,10 @@ class CraterGAN(LightningModule):
                 latent_dim:int=100,
                 b1:float = 0.5,
                 b2:float = 0.999,
-                batch_size:int=256,
                 **kwargs):
         super().__init__()
 
         self.save_hyperparameters()
-
-        # hyperparameter
-        
 
         # networks
         data_shape = (channel, width, height)
@@ -39,9 +37,6 @@ class CraterGAN(LightningModule):
 
     def forward(self, z):
         return self.generator(z)
-
-    def adversarial_loss(self, y_hat, y):
-        return F.binary_cross_entropy(y_hat, y)
 
     def configure_optimizers(self):
         lr=self.hparams.lr
@@ -62,53 +57,71 @@ class CraterGAN(LightningModule):
         grid = torchvision.utils.make_grid(sample_imgs)
         self.logger.experiment.add_image("generated_images", grid, self.current_epoch)
 
-    def training_step(self, batch, batch_idx, optimizer_idx):
-        imgs, _ = batch[:-1]
-
+    def generator_loss(self, x):
         # sample noise
-        z = torch.randn(imgs.shape[0], self.hparams.latent_dim)
-        z = z.type_as(imgs)
+        z = torch.randn(x.shape[0], self.hparams.latent_dim, device=self.device)
+        y = torch.ones(x.size(0), 1, device=self.device)
+
+        # generate images
+        generated_imgs = self(z)
+
+        D_output = self.discriminator(generated_imgs)
+
+        # ground truth result (ie: all real)
+        g_loss = F.binary_cross_entropy(D_output, y)
+
+        return g_loss
+
+    def discriminator_loss(self, x):
+        # train discriminator on real
+        b = x.size(0)
+        x_real = x.view(b, -1)
+        y_real = torch.ones(b, 1, device=self.device)
+
+        # calculate real score
+        D_output = self.discriminator(x_real)
+        D_real_loss = F.binary_cross_entropy(D_output, y_real)
+
+        # train discriminator on fake
+        z = torch.randn(b, self.hparams.latent_dim, device=self.device)
+        x_fake = self(z)
+        y_fake = torch.zeros(b, 1, device=self.device)
+
+        # calculate fake score
+        D_output = self.discriminator(x_fake)
+        D_fake_loss = F.binary_cross_entropy(D_output, y_fake)
+
+        # gradient backprop & optimize ONLY D's parameters
+        D_loss = D_real_loss + D_fake_loss
+
+        return D_loss
+    
+    def training_step(self, batch, batch_idx, optimizer_idx):
+        x, _ = batch[:-1]
 
         # train generator
+        result = None
         if optimizer_idx == 0:
-
-            # generate images
-            self.generated_imgs = self(z)
-
-            # log sampled images
-            sample_imgs = self.generated_imgs[:6]
-            grid = torchvision.utils.make_grid(sample_imgs)
-            self.logger.experiment.add_image("generated_images", grid, 0)
-
-            # ground truth result (ie: all fake)
-            # put on GPU because we created this tensor inside training_loop
-            valid = torch.ones(imgs.size(0), 1)
-            valid = valid.type_as(imgs)
-
-            # adversarial loss is binary cross-entropy
-            g_loss = self.adversarial_loss(self.discriminator(self(z)), valid)
-            tqdm_dict = {"g_loss": g_loss.detach()}
-            output = OrderedDict({"loss": g_loss, "progress_bar": tqdm_dict, "log": tqdm_dict})
-            return output
+            result = self.generator_step(x)
 
         # train discriminator
         if optimizer_idx == 1:
-            # Measure discriminator's ability to classify real from generated samples
+            result = self.discriminator_step(x)
 
-            # how well can it label as real?
-            valid = torch.ones(imgs.size(0), 1)
-            valid = valid.type_as(imgs)
+        return result
 
-            real_loss = self.adversarial_loss(self.discriminator(imgs), valid)
+    def generator_step(self, x):
+        g_loss = self.generator_loss(x)
 
-            # how well can it label as fake?
-            fake = torch.zeros(imgs.size(0), 1)
-            fake = fake.type_as(imgs)
+        # log to prog bar on each step AND for the full epoch
+        # use the generator loss for checkpointing
+        self.log("g_loss", g_loss, on_epoch=True, prog_bar=True)
+        return g_loss
 
-            fake_loss = self.adversarial_loss(self.discriminator(self(z).detach()), fake)
+    def discriminator_step(self, x):
+        # Measure discriminator's ability to classify real from generated samples
+        d_loss = self.discriminator_loss(x)
 
-            # discriminator loss is the average of these
-            d_loss = (real_loss + fake_loss) / 2
-            tqdm_dict = {"d_loss": d_loss.detach()}
-            output = OrderedDict({"loss": d_loss, "progress_bar": tqdm_dict, "log": tqdm_dict})
-            return output
+        # log to prog bar on each step AND for the full epoch
+        self.log("d_loss", d_loss, on_epoch=True, prog_bar=True)
+        return d_loss

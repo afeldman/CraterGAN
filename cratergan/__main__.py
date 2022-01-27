@@ -3,14 +3,12 @@
 import os
 import sys
 import torch
+
+import fire
+
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.tuner.tuning import Tuner
-
-
-
-import fire
 
 from cratergan.module.crater import CaterDataModule
 from cratergan.gan import CraterGAN
@@ -18,32 +16,47 @@ from cratergan.gan import CraterGAN
 def training(datasource:str=".",
              gpus:int=torch.cuda.device_count(), 
              workers:int=os.cpu_count()//2,
-             checkpoint:str="./checkpoint", 
+             checkpoint:str="./checkpoint",
+             batch_size:int = 256,
+             checkpoint_file:str = "", 
              strategy=None):
 
     checkpoint_callback = ModelCheckpoint(dirpath=f"{checkpoint}/log/",
+                                 monitor="g_loss",
                                  verbose=True,
                                  save_top_k=3,
-                                 mode="max",
-                                 filename='CraterGAN-{epoch:02d}')
+                                 mode="min",
+                                 filename='CraterGAN-{epoch:04d}-{g_loss:.5f}')
 
-    logger = TensorBoardLogger(f'{checkpoint}/logs/')
+    logger = TensorBoardLogger(f'{checkpoint}/tb/')
 
     datamodel = CaterDataModule(data_dir=datasource, 
-                                num_worker=workers)
+                                num_worker=workers,
+                                batch_size=batch_size)
 
     image_size = datamodel.size()
 
-    model = CraterGAN(channel=image_size[0],
+    if not checkpoint_file or not bool(checkpoint_file.strip()):
+        model = CraterGAN(channel=image_size[0],
                     height=image_size[1],
                     width=image_size[2])
+    else:
+        model = CraterGAN.load_from_checkpoint(f"{checkpoint}/log/{checkpoint_file}")
 
-    trainer = Trainer(gpus=gpus, 
+    if strategy is not None:
+        trainer = Trainer(gpus=gpus, 
                     callbacks=[checkpoint_callback],
                     default_root_dir=checkpoint,
                     logger=logger,
                     auto_lr_find=True,
-                    strategy=strategy,
+                    auto_scale_batch_size='binsearch',
+                    auto_select_gpus=True)
+    else:
+        trainer = Trainer(gpus=gpus, 
+                    callbacks=[checkpoint_callback],
+                    default_root_dir=checkpoint,
+                    logger=logger,
+                    auto_lr_find=True,
                     auto_scale_batch_size='binsearch',
                     auto_select_gpus=True)
 
