@@ -9,13 +9,14 @@ from apu.setup import setversion, Module
 project_name="cratergan"
 
 setversion(os.path.abspath(os.path.dirname(__file__)),
-           f'{project_name}/__init__.py')
+           f'{project_name}/__version__.py')
 
-from cratergan import __author__, __version__, __email__
+from cratergan import __author__, __email__
+from cratergan.__version__ import VERSION
 
 setup(
     name=project_name,
-    version='.'.join([str(v) for v in __version__]),
+    version=VERSION,
     author=__author__,
     author_email=__email__,
     py_modules=[project_name],

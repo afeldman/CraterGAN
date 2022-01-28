@@ -12,6 +12,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 
 from cratergan.module.crater import CaterDataModule
 from cratergan.gan import CraterGAN
+from cratergan.__version__ import VERSION
 
 def training(datasource:str=".",
              gpus:int=torch.cuda.device_count(), 
@@ -22,13 +23,14 @@ def training(datasource:str=".",
              strategy=None):
 
     checkpoint_callback = ModelCheckpoint(dirpath=f"{checkpoint}/log/",
-                                 monitor="g_loss",
+                                 monitor="val_loss",
                                  verbose=True,
                                  save_top_k=3,
                                  mode="min",
-                                 filename='CraterGAN-{epoch:04d}-{g_loss:.5f}')
+                                 save_last=True,
+                                 filename='CraterGAN-{epoch:04d}-{val_loss:.5f}')
 
-    logger = TensorBoardLogger(f'{checkpoint}/tb/')
+    logger = TensorBoardLogger(f'{checkpoint}/tb/', version='cratergan_'+VERSION)
 
     datamodel = CaterDataModule(data_dir=datasource, 
                                 num_worker=workers,
@@ -50,7 +52,8 @@ def training(datasource:str=".",
                     logger=logger,
                     auto_lr_find=True,
                     auto_scale_batch_size='binsearch',
-                    auto_select_gpus=True)
+                    auto_select_gpus=True,
+                    strategy=strategy)
     else:
         trainer = Trainer(gpus=gpus, 
                     callbacks=[checkpoint_callback],

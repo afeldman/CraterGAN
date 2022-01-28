@@ -7,8 +7,6 @@ import torchvision
 
 from pytorch_lightning import LightningModule
 
-from torchmetrics import Accuracy
-
 from cratergan.module.generator import Generator
 from cratergan.module.discriminator import Discriminator
 
@@ -125,3 +123,15 @@ class CraterGAN(LightningModule):
         # log to prog bar on each step AND for the full epoch
         self.log("d_loss", d_loss, on_epoch=True, prog_bar=True)
         return d_loss
+
+    def validation_step(self, batch, batch_idx):
+        x, _ = batch[:-1]
+
+        b = x.size(0)
+        x_real = x.view(b, -1)
+        y_real = torch.ones(b, 1, device=self.device)
+        loss = self.discriminator(x_real)
+        val_loss = F.binary_cross_entropy(loss, y_real)
+
+        self.log("val_loss", val_loss, on_epoch=True, prog_bar=True)
+        return val_loss
