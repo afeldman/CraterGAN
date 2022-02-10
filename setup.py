@@ -13,7 +13,7 @@ from cratergan.__version__ import __version__
 
 setup(
     name=project_name,
-    version=__version__,
+    version=".".join([str(v) for v in __version__]),
     author=__author__,
     author_email=__email__,
     py_modules=[project_name],
