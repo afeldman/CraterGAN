@@ -25,10 +25,10 @@ class CraterGAN(LightningModule):
         self.save_hyperparameters()
 
         # networks
-        data_shape = (channel, width, height)
+        self.data_shape = (channel, width, height)
 
-        self.generator = Generator(latent_dim=self.hparams.latent_dim, img_shape=data_shape)
-        self.discriminator = Discriminator(img_shape=data_shape)
+        self.generator = Generator(latent_dim=self.hparams.latent_dim, img_shape=self.data_shape)
+        self.discriminator = Discriminator(img_shape=self.data_shape)
 
         self.validation_z = torch.randn(8, self.hparams.latent_dim)
         self.sample_input_img = torch.zeros(2, self.hparams.latent_dim)
@@ -47,13 +47,25 @@ class CraterGAN(LightningModule):
 
         return [opt_g, opt_d], []
 
+    def custom_histogram_adder(self):
+        for name, params in self.named_parameters():
+            self.logger.experiment.add_histogram(name,params,self.current_epoch)
+            
     def on_epoch_end(self):
         z = self.validation_z.type_as(self.generator.model[0].weight)
 
         # log sampled images
         sample_imgs = self(z)
+
         grid = torchvision.utils.make_grid(sample_imgs)
-        self.logger.experiment.add_image("generated_images", grid, self.current_epoch)
+
+        # tensorboard
+        self.logger.experiment.add_image("generated_images", grid, self.current_epoch)        
+        if(self.current_epoch==0):
+            self.logger.experiment.add_graph(
+                CraterGAN(self.data_shape[0],self.data_shape[2],self.data_shape[1]), 
+                z.detach().to("cpu"))
+        self.custom_histogram_adder()
 
     def generator_loss(self, x):
         # sample noise
