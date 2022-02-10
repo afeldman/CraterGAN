@@ -4,19 +4,16 @@ import os
 
 # Third party
 from setuptools import find_packages, setup
-from apu.setup import setversion, Module
+from apu.setup import Module
 
 project_name="cratergan"
 
-setversion(os.path.abspath(os.path.dirname(__file__)),
-           f'{project_name}/__version__.py')
-
 from cratergan import __author__, __email__
-from cratergan.__version__ import VERSION
+from cratergan.__version__ import __version__
 
 setup(
     name=project_name,
-    version=VERSION,
+    version=__version__,
     author=__author__,
     author_email=__email__,
     py_modules=[project_name],
