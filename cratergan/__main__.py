@@ -15,7 +15,7 @@ from cratergan.gan import CraterGAN
 from cratergan.__version__ import __version__
 
 def training(datasource:str=".",
-             gpus:int=torch.cuda.device_count(), 
+             #c_gpus:int=torch.cuda.device_count(), 
              workers:int=os.cpu_count()//2,
              checkpoint:str="./checkpoint",
              batch_size:int = 256,
@@ -37,7 +37,7 @@ def training(datasource:str=".",
                                 num_worker=workers,
                                 batch_size=batch_size)
 
-    image_size = datamodel.size()
+    image_size = datamodel.dims
 
     if not checkpoint_file or not bool(checkpoint_file.strip()):
         model = CraterGAN(channel=image_size[0],
@@ -47,23 +47,15 @@ def training(datasource:str=".",
         model = CraterGAN.load_from_checkpoint(f"{checkpoint}/log/{checkpoint_file}")
 
     if strategy is not None:
-        trainer = Trainer(gpus=gpus, 
-                    callbacks=[checkpoint_callback],
+        trainer = Trainer(callbacks=[checkpoint_callback],
                     default_root_dir=checkpoint,
                     logger=logger,
-                    auto_lr_find=True,
-                    auto_scale_batch_size='binsearch',
-                    auto_select_gpus=True,
-                    strategy=strategy)
+                    strategy=strategy,max_epochs=-1)
     else:
-        trainer = Trainer(gpus=gpus, 
-                    callbacks=[checkpoint_callback],
+        trainer = Trainer(callbacks=[checkpoint_callback],
                     default_root_dir=checkpoint,
-                    logger=logger,
-                    auto_lr_find=True,
-                    auto_scale_batch_size='binsearch',
-                    auto_select_gpus=True)
+                    logger=logger,max_epochs=-1)
 
-    trainer.fit(model, datamodel)
+    trainer.fit(model=model, datamodule=datamodel)
 
 sys.exit(fire.Fire(training))

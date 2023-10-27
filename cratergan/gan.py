@@ -22,6 +22,9 @@ class CraterGAN(LightningModule):
                 **kwargs):
         super().__init__()
 
+
+        self.automatic_optimization = False
+
         self.save_hyperparameters()
 
         # networks
@@ -45,7 +48,7 @@ class CraterGAN(LightningModule):
         opt_g = torch.optim.Adam(self.generator.parameters(), lr=lr, betas=(b1, b2))
         opt_d = torch.optim.Adam(self.discriminator.parameters(), lr=lr, betas=(b1, b2))
 
-        return [opt_g, opt_d], []
+        return opt_g, opt_d
 
     def custom_histogram_adder(self):
         for name, params in self.named_parameters():
@@ -106,26 +109,35 @@ class CraterGAN(LightningModule):
 
         return D_loss
     
-    def training_step(self, batch, batch_idx, optimizer_idx):
+    def training_step(self, batch, batch_idx):
+        g_opt, d_opt = self.optimizers()
+
+
         x, _ = batch[:-1]
 
-        # train generator
-        result = None
-        if optimizer_idx == 0:
-            result = self.generator_step(x)
+        ##########################
+        # Optimize Generator     #
+        ##########################
+        errG = self.generator_step(x)           
+        g_opt.zero_grad()
+        self.manual_backward(errG)
+        g_opt.step()
 
-        # train discriminator
-        if optimizer_idx == 1:
-            result = self.discriminator_step(x)
+        ##########################
+        # Optimize Discriminator #
+        ##########################
+        errD = self.discriminator_step(x)
+        d_opt.zero_grad()
+        self.manual_backward(errD)
+        d_opt.step()
 
-        return result
+        self.log_dict({"g_loss": errG.detach().item(), "d_loss": errD.detach().item()}, prog_bar=True)
 
     def generator_step(self, x):
         g_loss = self.generator_loss(x)
 
         # log to prog bar on each step AND for the full epoch
         # use the generator loss for checkpointing
-        self.log("g_loss", g_loss.detach().item(), on_epoch=True, prog_bar=True)
         return g_loss
 
     def discriminator_step(self, x):
@@ -133,7 +145,6 @@ class CraterGAN(LightningModule):
         d_loss = self.discriminator_loss(x)
 
         # log to prog bar on each step AND for the full epoch
-        self.log("d_loss", d_loss.detach().item(), on_epoch=True, prog_bar=True)
         return d_loss
 
     def validation_step(self, batch, batch_idx):
