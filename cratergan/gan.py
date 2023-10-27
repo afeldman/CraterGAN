@@ -125,7 +125,7 @@ class CraterGAN(LightningModule):
 
         # log to prog bar on each step AND for the full epoch
         # use the generator loss for checkpointing
-        self.log("g_loss", g_loss, on_epoch=True, prog_bar=True)
+        self.log("g_loss", g_loss.detach().item(), on_epoch=True, prog_bar=True)
         return g_loss
 
     def discriminator_step(self, x):
@@ -133,7 +133,7 @@ class CraterGAN(LightningModule):
         d_loss = self.discriminator_loss(x)
 
         # log to prog bar on each step AND for the full epoch
-        self.log("d_loss", d_loss, on_epoch=True, prog_bar=True)
+        self.log("d_loss", d_loss.detach().item(), on_epoch=True, prog_bar=True)
         return d_loss
 
     def validation_step(self, batch, batch_idx):
@@ -145,5 +145,5 @@ class CraterGAN(LightningModule):
         loss = self.discriminator(x_real)
         val_loss = F.binary_cross_entropy(loss, y_real)
 
-        self.log("val_loss", val_loss, on_epoch=True, prog_bar=True)
+        self.log("val_loss", val_loss.detach().item(), on_epoch=True, prog_bar=True)
         return val_loss
