@@ -1,7 +1,7 @@
-torch==1.10.0
+torch==2.14.1
 fire==0.4.0
-pytorch_lightning==1.4.9
+pytorch_lightning==2.6.6
 numpy==1.21.2
-torchvision==0.11.1
+torchvision==0.29.2
 apu==0.1.18
 craterdata==0.1.2
